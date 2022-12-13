@@ -48,7 +48,7 @@ def driver_option(profile_dir='profile'):
              "profile.password_manager_enabled": True}
     options.add_experimental_option("prefs", prefs)
     options.add_argument(f"--user-data-dir={os.path.join(BASE_DIR, 'profiles')}") 
-    # options.headless = True
+    options.headless = True
     options.add_argument(f'--profile-directory={profile_dir}')
 
     return options

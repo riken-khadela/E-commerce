@@ -18,59 +18,71 @@ from .serializers import ProductSerializer, CartSerializer,Cart,SendPasswordRese
 import random
 from django.contrib.postgres.search import SearchVector
 
-class SignUpView(CreateView):
-    form_class = CustomUserCreationForm
-    success_url = reverse_lazy("login")
-    template_name = "registration/signup.html"
     
 def get_or_createToken(request):
+    """ 
+    Create a user access token for already logged in user
+    """
     if request.user.is_authenticated and 'access_token' not in request.session  :
         user = CustomUser.objects.get(email = request.user.email)
         token = get_tokens_for_user(user)
         request.session['access_token'] = token['access']
-    
+        return request.session['access_token']
+    else:
+        return False
+
+def get_tokens_for_user(user):
+    """ 
+    Get a token access for already logged in user.
+    """
+    refresh = RefreshToken.for_user(user)
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }
+      
+class SignUpView(CreateView):
+    """ 
+    Genrate a signup view to register user
+    """
+    form_class = CustomUserCreationForm
+    success_url = reverse_lazy("login")
+    template_name = "registration/signup.html"
 
 class HomeView(TemplateView):
-
+    """
+    Create a home view, with that showing products by Searching names, Ascending and Descending orders by names and price.
+    """
     def get(self,request,name=''):
         
         get_or_createToken(request)
-        all_product_shown = False
-        if name == "all" :
-            all_product_shown = True
-            all_products = requests.get('http://127.0.0.1:8000/api/product/').json()
-            
-        elif name == "Ascending": 
-            all_product_shown = True
-            all_products = requests.get('http://127.0.0.1:8000/api/product/',data={'order_by' : "Name"}).json()
-            
-        elif name == "Descending" : 
-            all_product_shown = True
-            all_products = requests.get('http://127.0.0.1:8000/api/product/',data={'order_by' : "-Name"}).json()
-            
-        elif name== "PriceDescending" :
-            all_product_shown = True
-            all_products = requests.get('http://127.0.0.1:8000/api/product/',data={'order_by' : "Price"}).json()
-             
-        elif name== "PriceAscending" : 
-            all_product_shown = True
-            all_products = requests.get('http://127.0.0.1:8000/api/product/',data={'order_by' : "-Price"}).json()
-            
-        elif name:
-            
-            data = {"product_name" : name}
-            all_products = requests.get('http://127.0.0.1:8000/api/product_search',data=data).json()
-            
+        all_product_shown = True
+        data = {}
+        if name :
+            if name == "all" :all_products = requests.get('http://127.0.0.1:8000/api/product/').json()
+            elif name == "Ascending": all_products = requests.get('http://127.0.0.1:8000/api/product/',data={'order_by' : "Name"}).json()
+            elif name == "Descending" :all_products = requests.get('http://127.0.0.1:8000/api/product/',data={'order_by' : "-Name"}).json()
+            elif name== "PriceDescending" :all_products = requests.get('http://127.0.0.1:8000/api/product/',data={'order_by' : "Price"}).json()
+            elif name== "PriceAscending" : all_products = requests.get('http://127.0.0.1:8000/api/product/',data={'order_by' : "-Price"}).json()
+            else :
+                all_product_shown = False
+                data = {"product_name" : name}
+                all_products = requests.get('http://127.0.0.1:8000/api/product_search',data=data).json()
+                
             if request.user.is_authenticated :
                 if not request.user.is_user_verified:
                     return redirect("verify")
         else:
-            all_products = random.sample(list(Product.objects.all()),8)
+            all_product_shown = False
+            all_products = random.sample(list(Product.objects.all()),12)
             
         return render(request,'home.html',{ "all_products" : all_products, "all_product_shown" : all_product_shown })
     
     
 class cartView(TemplateView) :
+    """
+    Create a cart view for proceed to check out and products of user's cart.
+    """
     def get(self,request):
         get_or_createToken(request)
         if not request.user.is_authenticated :
@@ -92,6 +104,9 @@ class cartView(TemplateView) :
         return render(request,'cart.html',{"cart" : response, "products" :response.json()[0]['Products']})
     
 class RemoveCartProduct(APIView):
+    """ 
+    This APIview is created to remove cart from user without reloading cart page and allows to remove product from cart.
+    """
     def get(self,request,product_id=0,user_id=0):
         payload = json.dumps({
             "user_id": user_id,
@@ -106,6 +121,9 @@ class RemoveCartProduct(APIView):
         return Response(response.json())    
     
 class AddCartProduct(APIView):
+    """ 
+    add products in a cart from front side of home view
+    """
     def get(self,request,product_id=0,user_id=0):
         payload = json.dumps({
             "user_id": user_id,
@@ -118,14 +136,11 @@ class AddCartProduct(APIView):
         response = requests.request("POST", 'http://127.0.0.1:8000/api/cart/', headers=headers, data=payload)
         return Response(response.json())    
 
-def get_tokens_for_user(user):
-    refresh = RefreshToken.for_user(user)
-    return {
-        'refresh': str(refresh),
-        'access': str(refresh.access_token),
-    }
-  
+
 class UserRegistrationView(APIView):
+    """ 
+    An api view for user registration and return error if these is any error or not provided insufficient data
+    """
     renderer_classes = [UserRenderer]
     def post(self, request, format=None):
             serializer = UserRegistrationSerializer(data=request.data)
@@ -137,6 +152,9 @@ class UserRegistrationView(APIView):
             return Response({'token':token, 'msg':'Registration Successful'}, status=status.HTTP_201_CREATED)
 
 class UserLoginView(APIView):
+    """ 
+    send an username and exist user's password to get user's accesstoken.
+    """
     renderer_classes = [UserRenderer]
     def post(self, request, format=None):
         serializer = UserLoginSerializer(data=request.data)
@@ -151,6 +169,9 @@ class UserLoginView(APIView):
             return Response({'errors':{'non_field_errors':['Email or Password is not Valid']}}, status=status.HTTP_404_NOT_FOUND)
 
 class UserProfileView(APIView):
+    """ 
+    Get a user profile data with email and password
+    """
     renderer_classes = [UserRenderer]
     permission_classes = [IsAuthenticated]
     def get(self, request, format=None):
@@ -158,6 +179,9 @@ class UserProfileView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class UserChangePasswordView(APIView):
+    """ 
+    Change user password
+    """
     renderer_classes = [UserRenderer]
     permission_classes = [IsAuthenticated]
     def post(self, request, format=None):
@@ -166,6 +190,9 @@ class UserChangePasswordView(APIView):
         return Response({'msg':'Password Changed Successfully'}, status=status.HTTP_200_OK)
 
 class SendPasswordResetEmailView(APIView):
+    """ 
+    send email for password reset
+    """
     renderer_classes = [UserRenderer]
     def post(self, request, format=None):
         serializer = SendPasswordResetEmailSerializer(data=request.data)
@@ -173,6 +200,9 @@ class SendPasswordResetEmailView(APIView):
         return Response({'msg':'Password Reset link send. Please check your Email'}, status=status.HTTP_200_OK)
 
 class UserPasswordResetView(APIView):
+    """ 
+    reset user's password
+    """
     renderer_classes = [UserRenderer]
     def post(self, request, uid, token, format=None):
         serializer = UserPasswordResetSerializer(data=request.data, context={'uid':uid, 'token':token})
@@ -183,6 +213,11 @@ class UserPasswordResetView(APIView):
 
 
 class VerifyView(TemplateView):
+    """ 
+    Create a view for verify mobile number and email both
+    Note :
+    Mobile number OTP and email OTP must be same to verify the user
+    """
     def __init__(self):
         self.mobile = Mobile_verification()
         self.created_email_otp = ''
@@ -225,7 +260,9 @@ class VerifyView(TemplateView):
         return redirect('home')
     
 class ProductView(APIView, DestroyModelMixin,):
-    
+    """ 
+    An apiview for get all products, add products and delete products as well.
+    """
     def get(self, request, product_id=None):
         if product_id:
             try:
@@ -267,6 +304,10 @@ class ProductView(APIView, DestroyModelMixin,):
         return Response(status=204)
     
 class CartView(APIView,DestroyModelMixin):
+    """ 
+    an api for sending user's cart data, add products on cart and delete products of cart with that delete cart as well.
+    """
+    
     renderer_classes = [UserRenderer]
     permission_classes = [IsAuthenticated]
     
@@ -307,6 +348,9 @@ class CartView(APIView,DestroyModelMixin):
     
     
 class Product_search(APIView,DestroyModelMixin):
+    """ 
+    an api for search products by its name 
+    """
     def get(self, request):
         if request.data['product_name']:
             queryset = Product.objects.filter(Name__icontains=request.data['product_name'])

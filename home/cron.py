@@ -6,6 +6,15 @@ def random_sleep(a=5,b=9):
     time.sleep(random.randint(a,b))
     
 def my_scheduled_job():
+    
+    """
+    This is the cronjob for scrap a normal product data and add these products in database through calling api.
+    There will be only three fields :
+    1. Name
+    2. ImgLink
+    3. Price
+    """
+    
     driver = get_driver()
     driver.get('https://in.puma.com/in/en/mens')
     product_li = []

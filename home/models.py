@@ -10,8 +10,16 @@ class TimeStampModel(models.Model):
 
     class Meta:
         abstract = True
+        
 class UserManager(BaseUserManager):
+    """ 
+    Create a usernamager to create new user's data.
+    """
+    
     def create_user(self, email,username,  password=None, password2=None,Mobile_number=None,gender=None,city=None,first_name=None,last_name=None):
+        """ 
+        Create a normal user instead of super user with his/ her personal details.
+        """
         if not email:
             raise ValueError('User must have an email address')
 
@@ -29,15 +37,14 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, name, tc, password=None):
+    def create_superuser(self, email, name, password=None):
         """
-        Creates and saves a superuser with the given email, name, tc and password.
+        Creates and saves a superuser with the given email, name and password.
         """
         user = self.create_user(
             email,
             password=password,
             name=name,
-            tc=tc,
         )
         user.is_admin = True
         user.save(using=self._db)
@@ -45,6 +52,9 @@ class UserManager(BaseUserManager):
 
 
 class CustomUser(AbstractUser,TimeStampModel):
+    """ 
+    This models is create to store and edit the New registered User's Data and edit Django defualt User authentication 
+    """
     GENDER = (
         ('MALE','MALE'),
         ('FEMALE','FEMALE'),
@@ -77,6 +87,9 @@ class CustomUser(AbstractUser,TimeStampModel):
     
 
 class Product(models_D.Model):
+    """ 
+    A model to store and use Products data
+    """
     id = models_D.AutoField(primary_key=True)
     Name = models_D.TextField(max_length=1000,null=False,blank=False)
     ImgLink = models_D.CharField(max_length=255,null=False,blank=False)
@@ -88,6 +101,9 @@ class Product(models_D.Model):
 
         
 class Cart(models_D.Model):
+    """ 
+    A model to store and use Cart details of particular user and this will be connected to the User and Products as well which will add in the cart
+    """
     id = models_D.AutoField(primary_key=True)
     user = models_D.ForeignKey(CustomUser,on_delete=models.CASCADE)
     Products =  models_D.ArrayReferenceField(to=Product,on_delete=models_D.CASCADE,null=True,blank=True)
