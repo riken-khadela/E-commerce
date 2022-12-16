@@ -54,13 +54,13 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
         password = attrs.get('password')
         password2 = attrs.get('password2')
-        if len(password) <= 7:serializers.ValidationError("Password's Length should be minimum 8 ")
+        if len(password) <= 7: raise serializers.ValidationError("Password's Length should be minimum 8 ")
         if password != password2:
           raise serializers.ValidationError("Password and Confirm Password doesn't match")
         check_p = re.search(re.compile(password_validator),password)
         if check_p:
           return attrs
-        else: serializers.ValidationError("Password must be with at least one uppercase, special Char and A number.")
+        else: raise serializers.ValidationError("Password must be with at least one uppercase, special Char and A number.")
 
 
       def create(self, validated_data):
