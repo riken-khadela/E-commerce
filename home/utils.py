@@ -11,12 +11,13 @@ class Mobile_verification:
     
     def __init__(self) -> None:
         self.account_sid = "AC3b05a51676ee6eca3e6b72cd5f7d131c"
-        self.auth_token = "7181b1ec3ab0ddea60c087ac6c61ccf4"
+        self.auth_token = "49ceeb779a99b7e52052b3842b1f2aac"
         self.verify_sid = "VA5af70b81bb163952d768e8f9c7153491"
         self.client = Client(self.account_sid, self.auth_token)
         self.verified_number = ""
 
     def get_otp(self,verify_number = ""):
+        print(verify_number)
         """_summary_
             in this function will take a Mobile number and return Verification status In case of any error it will return False to verify the process is sending OTP is done or not
         Args:
@@ -46,4 +47,6 @@ class Mobile_verification:
 
         return verification_check.status
     
+    
+
     

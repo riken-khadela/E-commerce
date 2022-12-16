@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.mixins import UpdateModelMixin, DestroyModelMixin
-from .serializers import ProductSerializer, CartSerializer,Cart,SendPasswordResetEmailSerializer, UserChangePasswordSerializer, UserLoginSerializer, UserPasswordResetSerializer, UserProfileSerializer, UserRegistrationSerializer
+from .serializers import ProductSerializer, CartSerializer,Cart, UserChangePasswordSerializer, UserLoginSerializer, UserProfileSerializer, UserRegistrationSerializer
 import random
 from django.contrib.postgres.search import SearchVector
 
@@ -23,7 +23,7 @@ def get_or_createToken(request):
     """ 
     Create a user access token for already logged in user
     """
-    if request.user.is_authenticated and 'access_token' not in request.session  :
+    if request.user.is_authenticated  :
         user = CustomUser.objects.get(email = request.user.email)
         token = get_tokens_for_user(user)
         request.session['access_token'] = token['access']
@@ -263,7 +263,6 @@ class ProductView(APIView, DestroyModelMixin,):
     def post(self,request):
         create_serializer = ProductSerializer(data=request.data)
         if create_serializer.is_valid():
-
             Product_item_object = create_serializer.save()
 
             read_serializer = ProductSerializer(Product_item_object)

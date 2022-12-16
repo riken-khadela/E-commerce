@@ -91,7 +91,7 @@ WSGI_APPLICATION = 'e_com.wsgi.application'
 DATABASES = {
    'default' : {
       'ENGINE' : 'djongo',
-      'NAME' : 'E_commerce3'
+      'NAME' : 'E_commerce'
    }
 }
 
